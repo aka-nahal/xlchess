@@ -1,18 +1,31 @@
-import { useMemo, useState } from "react";
-import BoardGrid, { type HighlightKind } from "./BoardGrid";
+import { useEffect, useMemo, useRef, useState } from "react";
+import BoardGrid, { squareToRC, type HighlightKind } from "./BoardGrid";
 import { puzzle } from "@/data/puzzle";
 
 type Phase = "picking" | "moving" | "solved";
 
+const MSG_BLACK_PIECE = "That's a black piece. It's White to move!";
+const MSG_WRONG_MOVE = "Not quite. Look for the mate in one!";
+
 /**
- * A one-move chess puzzle: pick the white piece, pick its destination.
- * Only the single winning move is accepted; a wrong choice flashes red and
- * resets the selection. Solving reveals the mate and a short explanation.
+ * A one-move chess puzzle: pick the white piece and its destination, by
+ * click-click or drag-and-drop. Only the single winning move is accepted; a
+ * wrong choice flashes red, explains itself, and resets the selection.
+ * Solving reveals the mate and a short explanation.
  */
 export default function PuzzleBoard() {
   const [selected, setSelected] = useState<string | null>(null);
   const [wrongSquare, setWrongSquare] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("picking");
+  const [hint, setHint] = useState<string | null>(null);
+  const wrongTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (wrongTimer.current !== null) window.clearTimeout(wrongTimer.current);
+    },
+    []
+  );
 
   const { grid, solvedGrid, solution, prompt, explanation } = puzzle;
   const solved = phase === "solved";
@@ -29,11 +42,24 @@ export default function PuzzleBoard() {
     return h;
   }, [solved, selected, wrongSquare, solution]);
 
-  const flashWrong = (sq: string) => {
+  const flashWrong = (sq: string, message: string) => {
     setWrongSquare(sq);
     setSelected(null);
     setPhase("picking");
-    window.setTimeout(() => setWrongSquare(null), 450);
+    setHint(message);
+    // A fresh flash restarts the clock; otherwise a still-pending timeout
+    // from an earlier wrong click would clear this one early.
+    if (wrongTimer.current !== null) window.clearTimeout(wrongTimer.current);
+    wrongTimer.current = window.setTimeout(() => {
+      setWrongSquare(null);
+      wrongTimer.current = null;
+    }, 450);
+  };
+
+  const solve = () => {
+    setPhase("solved");
+    setSelected(null);
+    setHint(null);
   };
 
   const onSquareClick = (sq: string, piece: string | null) => {
@@ -45,7 +71,7 @@ export default function PuzzleBoard() {
         setSelected(sq);
         setPhase("moving");
       } else if (piece) {
-        flashWrong(sq); // clicked a black piece
+        flashWrong(sq, MSG_BLACK_PIECE);
       }
       return;
     }
@@ -63,24 +89,39 @@ export default function PuzzleBoard() {
       return;
     }
     if (selected === solution.from && sq === solution.to) {
-      setPhase("solved");
-      setSelected(null);
+      solve();
       return;
     }
-    flashWrong(sq);
+    flashWrong(sq, MSG_WRONG_MOVE);
+  };
+
+  const onDragMove = (from: string, to: string) => {
+    const [r, c] = squareToRC(from);
+    const piece = grid[r][c];
+    if (!piece) return;
+    if (piece !== piece.toUpperCase()) {
+      flashWrong(from, MSG_BLACK_PIECE);
+      return;
+    }
+    if (from === solution.from && to === solution.to) {
+      solve();
+      return;
+    }
+    flashWrong(to, MSG_WRONG_MOVE);
   };
 
   const reset = () => {
     setPhase("picking");
     setSelected(null);
     setWrongSquare(null);
+    setHint(null);
   };
 
   const statusText = solved
     ? explanation
     : phase === "moving"
       ? `Piece on ${selected} selected. Now pick its destination.`
-      : prompt;
+      : (hint ?? prompt);
 
   return (
     <div>
@@ -88,6 +129,7 @@ export default function PuzzleBoard() {
         grid={solved ? solvedGrid : grid}
         highlights={highlights}
         onSquareClick={onSquareClick}
+        onDragMove={solved ? undefined : onDragMove}
         lastMove={solved ? solution : null}
         moveKey={solved ? "solved" : "unsolved"}
       />

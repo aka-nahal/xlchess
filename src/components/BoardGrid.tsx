@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import type { Grid } from "@/data/evergreen";
@@ -5,8 +6,8 @@ import type { Grid } from "@/data/evergreen";
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 
 const GLYPH: Record<string, string> = {
-  K: "\u2654", Q: "\u2655", R: "\u2656", B: "\u2657", N: "\u2658", P: "\u2659",
-  k: "\u265A", q: "\u265B", r: "\u265C", b: "\u265D", n: "\u265E", p: "\u265F",
+  K: "♔", Q: "♕", R: "♖", B: "♗", N: "♘", P: "♙",
+  k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟",
 };
 
 const PIECE_NAME: Record<string, string> = {
@@ -39,6 +40,11 @@ interface BoardGridProps {
   /** When provided, squares become buttons and the board is interactive. */
   onSquareClick?: (square: string, piece: string | null) => void;
   /**
+   * When provided, pieces can also be dragged. Fired when a piece is dragged
+   * from one square and dropped on a different one.
+   */
+  onDragMove?: (from: string, to: string) => void;
+  /**
    * The move that produced this grid. The piece on `lastMove.to` animates
    * from its origin square into place. Change `moveKey` to retrigger.
    */
@@ -62,20 +68,80 @@ const pieceClass = (white: boolean) =>
       : "text-slate-900 drop-shadow-[0_1px_1px_rgba(255,255,255,0.25)]",
   ].join(" ");
 
+/** Pixels of pointer travel before a press counts as a drag instead of a click. */
+const DRAG_THRESHOLD = 6;
+
+interface DragView {
+  from: string;
+  x: number;
+  y: number;
+  over: string | null;
+}
+
 /**
  * Pure presentational 8x8 board. Rendering is identical for the replay and the
- * puzzle; interactivity is opt-in via `onSquareClick`, and the last move's
- * piece glides from its origin square (skipped under reduced motion).
+ * puzzle; interactivity is opt-in via `onSquareClick` (click-click moves) and
+ * `onDragMove` (drag-and-drop), and the last move's piece glides from its
+ * origin square (skipped under reduced motion).
  */
 export default function BoardGrid({
   grid,
   highlights = {},
   onSquareClick,
+  onDragMove,
   lastMove = null,
   moveKey,
 }: BoardGridProps) {
   const prefersReduced = useReducedMotion();
   const interactive = Boolean(onSquareClick);
+  const draggable = Boolean(onDragMove);
+
+  const dragRef = useRef<{ from: string; startX: number; startY: number; active: boolean } | null>(null);
+  // A captured pointer still fires the click event on the origin square after
+  // a drag ends elsewhere; this flag swallows that synthetic click.
+  const suppressClick = useRef(false);
+  const [dragView, setDragView] = useState<DragView | null>(null);
+
+  const squareAt = (x: number, y: number): string | null =>
+    document.elementFromPoint(x, y)?.closest("[data-square]")?.getAttribute("data-square") ?? null;
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>, sq: string, piece: string | null) => {
+    if (!piece || e.button !== 0) return;
+    suppressClick.current = false;
+    dragRef.current = { from: sq, startX: e.clientX, startY: e.clientY, active: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.active) {
+      if (Math.hypot(dx, dy) <= DRAG_THRESHOLD) return;
+      d.active = true;
+    }
+    setDragView({ from: d.from, x: dx, y: dy, over: squareAt(e.clientX, e.clientY) });
+  };
+
+  const handlePointerEnd = (e: React.PointerEvent, drop: boolean) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDragView(null);
+    if (!d?.active) return; // never left the threshold: let the click event handle it
+    suppressClick.current = true;
+    if (!drop) return;
+    const target = squareAt(e.clientX, e.clientY);
+    if (target && target !== d.from) onDragMove!(d.from, target);
+  };
+
+  const handleClick = (sq: string, piece: string | null) => {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
+    onSquareClick?.(sq, piece);
+  };
 
   const flightOffset = (() => {
     if (!lastMove || prefersReduced) return null;
@@ -93,6 +159,8 @@ export default function BoardGrid({
           const kind = highlights[sq];
           const white = piece ? piece === piece.toUpperCase() : false;
           const flying = Boolean(piece && flightOffset && lastMove && sq === lastMove.to);
+          const isDragOrigin = dragView?.from === sq;
+          const isDropTarget = Boolean(dragView && dragView.over === sq && dragView.from !== sq);
           const pieceLabel = piece
             ? `${white ? "White" : "Black"} ${PIECE_NAME[piece.toUpperCase()] ?? "piece"}`
             : "empty";
@@ -101,6 +169,7 @@ export default function BoardGrid({
             "relative flex aspect-square items-center justify-center select-none",
             isDark ? "bg-board-dark/70" : "bg-board-light/90",
             interactive ? "cursor-pointer focus-brand" : "",
+            draggable ? "touch-none" : "",
           ].join(" ");
 
           const inner = (
@@ -111,8 +180,26 @@ export default function BoardGrid({
                   className={`absolute inset-0 transition-opacity duration-300 ${HIGHLIGHT_CLASS[kind]}`}
                 />
               )}
+              {isDragOrigin && (
+                <span aria-hidden className="absolute inset-0 bg-brand/25" />
+              )}
+              {isDropTarget && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 bg-brand/20 ring-2 ring-inset ring-brand-light"
+                />
+              )}
               {piece &&
-                (flying ? (
+                (isDragOrigin && dragView ? (
+                  // The ghost must ignore pointer events so elementFromPoint
+                  // sees the square underneath it, not the piece itself.
+                  <span
+                    className={`pointer-events-none absolute inset-0 z-30 flex items-center justify-center ${pieceClass(white)}`}
+                    style={{ transform: `translate(${dragView.x}px, ${dragView.y}px) scale(1.15)` }}
+                  >
+                    {GLYPH[piece]}
+                  </span>
+                ) : flying ? (
                   <span
                     key={`fly-${moveKey ?? ""}-${sq}`}
                     className={`absolute inset-0 z-20 flex items-center justify-center ${pieceClass(white)}`}
@@ -139,7 +226,12 @@ export default function BoardGrid({
             <button
               key={sq}
               type="button"
-              onClick={() => onSquareClick!(sq, piece)}
+              data-square={sq}
+              onClick={() => handleClick(sq, piece)}
+              onPointerDown={draggable ? (e) => handlePointerDown(e, sq, piece) : undefined}
+              onPointerMove={draggable ? handlePointerMove : undefined}
+              onPointerUp={draggable ? (e) => handlePointerEnd(e, true) : undefined}
+              onPointerCancel={draggable ? (e) => handlePointerEnd(e, false) : undefined}
               aria-label={`${sq}, ${pieceLabel}`}
               className={cellClass}
             >
