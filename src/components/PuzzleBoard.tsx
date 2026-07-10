@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import BoardGrid, { squareToRC, type HighlightKind } from "./BoardGrid";
+import BoardGrid, { squareToRC, PIECE_NAME, type HighlightKind } from "./BoardGrid";
 import { puzzle } from "@/data/puzzle";
 
 type Phase = "picking" | "moving" | "solved";
@@ -10,7 +10,8 @@ const MSG_WRONG_MOVE = "Not quite. Look for the mate in one!";
 /**
  * A one-move chess puzzle: pick the white piece and its destination, by
  * click-click or drag-and-drop. Only the single winning move is accepted; a
- * wrong choice flashes red, explains itself, and resets the selection.
+ * wrong choice flashes red, explains itself, and resets the selection. A
+ * two-stage hint first points at the piece, then reveals the whole move.
  * Solving reveals the mate and a short explanation.
  */
 export default function PuzzleBoard() {
@@ -18,6 +19,7 @@ export default function PuzzleBoard() {
   const [wrongSquare, setWrongSquare] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("picking");
   const [hint, setHint] = useState<string | null>(null);
+  const [hintLevel, setHintLevel] = useState(0);
   const wrongTimer = useRef<number | null>(null);
 
   useEffect(
@@ -36,11 +38,12 @@ export default function PuzzleBoard() {
       h[solution.from] = "from";
       h[solution.to] = "to";
     } else {
+      if (hintLevel >= 2) h[solution.to] = "to";
       if (selected) h[selected] = "selected";
       if (wrongSquare) h[wrongSquare] = "wrong";
     }
     return h;
-  }, [solved, selected, wrongSquare, solution]);
+  }, [solved, selected, wrongSquare, solution, hintLevel]);
 
   const flashWrong = (sq: string, message: string) => {
     setWrongSquare(sq);
@@ -62,6 +65,20 @@ export default function PuzzleBoard() {
     setHint(null);
   };
 
+  const showHint = () => {
+    const next = Math.min(hintLevel + 1, 2);
+    const [r, c] = squareToRC(solution.from);
+    const pieceName = (PIECE_NAME[grid[r][c] ?? ""] ?? "piece").toLowerCase();
+    setHintLevel(next);
+    setSelected(solution.from);
+    setPhase("moving");
+    setHint(
+      next === 1
+        ? `Hint: the ${pieceName} on ${solution.from} delivers the mate.`
+        : `Hint: move ${solution.from} to ${solution.to}!`
+    );
+  };
+
   const onSquareClick = (sq: string, piece: string | null) => {
     if (solved) return;
 
@@ -70,6 +87,7 @@ export default function PuzzleBoard() {
         // A white piece was chosen.
         setSelected(sq);
         setPhase("moving");
+        setHint(null);
       } else if (piece) {
         flashWrong(sq, MSG_BLACK_PIECE);
       }
@@ -86,6 +104,7 @@ export default function PuzzleBoard() {
     if (piece && piece === piece.toUpperCase()) {
       // Switch selection to another white piece.
       setSelected(sq);
+      setHint(null);
       return;
     }
     if (selected === solution.from && sq === solution.to) {
@@ -115,13 +134,18 @@ export default function PuzzleBoard() {
     setSelected(null);
     setWrongSquare(null);
     setHint(null);
+    setHintLevel(0);
   };
 
   const statusText = solved
     ? explanation
-    : phase === "moving"
-      ? `Piece on ${selected} selected. Now pick its destination.`
-      : (hint ?? prompt);
+    : (hint ??
+      (phase === "moving"
+        ? `Piece on ${selected} selected. Now pick its destination.`
+        : prompt));
+
+  const actionBtnClass =
+    "focus-brand shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-slate-100 transition-colors hover:bg-white/[0.12]";
 
   return (
     <div>
@@ -148,14 +172,16 @@ export default function PuzzleBoard() {
           )}
           {statusText}
         </span>
-        {solved && (
-          <button
-            type="button"
-            onClick={reset}
-            className="focus-brand shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-slate-100 transition-colors hover:bg-white/[0.12]"
-          >
+        {solved ? (
+          <button type="button" onClick={reset} className={actionBtnClass}>
             Try again
           </button>
+        ) : (
+          hintLevel < 2 && (
+            <button type="button" onClick={showHint} className={actionBtnClass}>
+              Hint
+            </button>
+          )
         )}
       </div>
     </div>

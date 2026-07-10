@@ -10,7 +10,7 @@ const GLYPH: Record<string, string> = {
   k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟",
 };
 
-const PIECE_NAME: Record<string, string> = {
+export const PIECE_NAME: Record<string, string> = {
   K: "King", Q: "Queen", R: "Rook", B: "Bishop", N: "Knight", P: "Pawn",
 };
 
