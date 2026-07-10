@@ -3,7 +3,8 @@
 A recreation-plus-improvement of the [xlchess.com](https://xlchess.com) homepage
 hero, built for the Stage 2 Full-Stack Web Developer assessment.
 
-**Live demo:** https://xlchess.lonedetective.moe/
+**Live demo:** https://xlchess.lonedetective.moe/ 
+
 **Approach:** Option 2 — a faithful recreation of the existing hero, with
 thoughtful, production-minded improvements layered on top.
 
