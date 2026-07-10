@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-navy-950 font-sans text-slate-100 antialiased;
+  margin: 0;
+  min-height: 100dvh;
+  background-image:
+    radial-gradient(60rem 60rem at 75% -10%, rgba(99, 102, 241, 0.16), transparent 60%),
+    radial-gradient(50rem 50rem at 10% 20%, rgba(139, 92, 246, 0.1), transparent 55%),
+    linear-gradient(180deg, #050b1d 0%, #061631 60%, #081532 100%);
+  background-attachment: fixed;
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      92deg,
+      #818cf8 0%,
+      #6366f1 35%,
+      #8b5cf6 70%,
+      #c084fc 100%
+    );
+  }
+
+  .focus-brand:focus-visible {
+    @apply outline-none ring-2 ring-brand-light ring-offset-2 ring-offset-navy-950;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Hero decoration keyframes (transform/opacity only) --- */
+
+@keyframes float-piece {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -22px;
+  }
+}
+
+@keyframes scroll-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+
+/* CTA shine sweep: a gradient stripe that slides across on hover. */
+.cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+.cta-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 70%
+  );
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.cta-shine:hover::after {
+  transform: translateX(120%) skewX(-18deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-shine::after {
+    display: none;
+  }
+}
+
+/* Piece flight: destination piece glides in from its origin square.
+   Driven by CSS custom properties so it starts the same frame it mounts. */
+@keyframes piece-fly {
+  from {
+    transform: translate(var(--fly-x, 0%), var(--fly-y, 0%));
+  }
+  to {
+    transform: translate(0%, 0%);
+  }
+}
+
+/* Resting 3D tilt. Deliberately static under the pointer: any transform that
+   changes on hover moves the click targets while the user is aiming at them.
+   It flattens only on keyboard focus, which happens after targeting. */
+.tilt-rest {
+  transform: rotateX(1.5deg) rotateY(-3.5deg);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  /* NOTE: deliberately no `transform-style: preserve-3d` — it changes how the
+     browser hit-tests descendants and caused clicks over the card to land on
+     sibling elements. A flat card needs only the parent perspective. */
+}
+.tilt-rest:focus-within {
+  transform: rotateX(0deg) rotateY(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-rest {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Skip link: visually strong when focused, invisible otherwise (sr-only). */
+.skip-link:focus-visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  padding: 0.7rem 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  box-shadow:
+    0 12px 32px rgba(99, 102, 241, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
