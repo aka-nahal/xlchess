@@ -1,89 +1,53 @@
 # XLChess — Hero Section
 
-A recreation-plus-improvement of the [xlchess.com](https://xlchess.com) homepage hero,
-built for the Stage 2 full-stack technical assessment.
+A recreation-plus-improvement of the [xlchess.com](https://xlchess.com) homepage
+hero, built for the Stage 2 Full-Stack Web Developer assessment.
 
-**Live demo:** _add your live URL here_
-**Approach:** Option 2 — faithful recreation of the existing hero, with thoughtful,
-production-minded improvements layered on top.
+**Live demo:** https://xlchess.lonedetective.moe/
+**Approach:** Option 2 — a faithful recreation of the existing hero, with
+thoughtful, production-minded improvements layered on top.
 
 ![XLChess hero preview](./docs/preview-desktop.png)
 
----
+## Overview
 
-## What's inside
+The hero recreates the signature elements of the live site — the deep-navy
+gradient canvas, the indigo/violet brand accent, the gradient headline, and the
+right-hand chessboard panel — and extends them:
 
-The hero recreates the key elements of the live site — the deep-navy gradient
-canvas, the indigo/violet brand accent, the `Build the Future of Online Chess`
-headline, the supporting copy, and the signature right-hand panel: a chessboard
-that **replays classic games** — "The Evergreen Game" (Anderssen vs Dufresne,
-1852) and "The Opera Game" (Morphy vs Allies, 1858) — move by move, with square
-highlighting, a live move ticker, and a switcher to cycle between classics.
-
-Beyond the recreation:
-
-- **A playable puzzle** — the board card has two tabs: *Watch a classic* (the
-  Evergreen Game replay) and *Solve a puzzle* (a mate-in-one the visitor solves
-  by clicking a piece and its destination, with wrong-move feedback and an
-  explanation on success). A hero's underlying job is engagement — this turns a
-  passive visitor into a player within seconds.
-- **Interactive replay controls** — pause/resume, restart, and 1x/2x speed on the
-  replay tab.
-- **A designed motion system** — word-by-word headline reveal, ghost chess pieces
-  drifting in the background (an homage to the original site), pieces that glide
-  from square to square on every replay move and on the puzzle's winning move
-  (a same-frame CSS animation driven by custom properties), stats that count
-  up on view, a static resting 3D tilt on the board card
-  that straightens on keyboard focus (deliberately static under the pointer —
-  see the note in `TiltCard.tsx` and `index.css` about moving targets and
-  `preserve-3d` hit-testing), a shine sweep on
-  the primary CTA, and a scroll cue. Every effect is transform/opacity only and
-  fully disabled under `prefers-reduced-motion`.
-- **Branded loading screen** on first paint (fades out in under a second).
-- **Error handling** — a top-level React error boundary renders a branded
-  fallback with a reload action instead of a white screen, and the bundled game
-  data is validated at load so corrupt data fails fast with a clear message.
-- **Accessibility** — semantic landmarks, `aria` labels on the board and its
-  controls, `aria-live` move announcements, visible keyboard focus rings, and
-  full `prefers-reduced-motion` support (autoplay is disabled; the board shows
-  its final position).
-- **Performance** — fully static output, autoplay pauses while the tab is
-  hidden, fonts preconnected, ~116 KB gzipped total.
-- **Tests + CI** — a Vitest suite covers the board coordinate math and validates
-  the integrity of both bundled datasets; a GitHub Actions workflow runs tests,
-  type-checking, and the production build on every push.
-- **Social sharing** — Open Graph and Twitter card tags with a branded share
-  image, plus a skip-to-content link for keyboard users.
+- **Two classic games** replay move by move ("The Evergreen Game", 1852 and
+  "The Opera Game", 1858) with square highlighting, gliding piece animation,
+  a live move ticker, playback controls (pause / restart / 1x–2x speed), and a
+  switcher to cycle between classics.
+- **A playable puzzle** — a second tab challenges the visitor with a mate-in-one
+  (click a piece, click its destination), with wrong-move feedback, a solve
+  animation, and an explanation.
+- **A designed motion system** — word-by-word headline reveal, drifting ghost
+  pieces (an homage to the original site), count-up stats, a resting 3D tilt on
+  the board card, and a shine sweep on the primary CTA. Every effect is
+  transform/opacity-only and fully disabled under `prefers-reduced-motion`.
+- **Production details** — branded loading screen, error boundary with a
+  diagnosable fallback, fail-fast data validation, skip-to-content link with
+  real focus handoff, unit tests, and CI.
 
 ---
 
-## Tech stack
+## Setup and installation instructions
 
-| Concern        | Choice                          | Why                                                                |
-| -------------- | ------------------------------- | ------------------------------------------------------------------ |
-| Build tool     | **Vite 7**                      | Matches the original site's stack; fast dev server, tiny output.   |
-| Framework      | **React 19 + TypeScript**       | Component architecture + strict type safety.                        |
-| Styling        | **Tailwind CSS**                | Design tokens sampled from the live site live in one config.        |
-| Animation      | **Framer Motion**               | Declarative animation; respects reduced-motion out of the box.      |
-| Game accuracy  | **python-chess** (build-time)   | Game and puzzle positions generated and verified from real PGN.     |
-| Testing        | **Vitest + GitHub Actions**     | Unit tests for board math and data integrity, run in CI.            |
-
-## Getting started
-
-Requires **Node.js 20+**.
+Requires **Node.js 20+** and npm.
 
 ```bash
-# 1. Install
+# 1. Install dependencies
 npm install
 
-# 2. Run the dev server (http://localhost:5173)
+# 2. Start the dev server (http://localhost:5173)
 npm run dev
 
-# 3. Type-check + production build
-npm run build
-
-# 4. Run the test suite
+# 3. Run the unit test suite (10 tests)
 npm test
+
+# 4. Type-check and create a production build (outputs ./dist)
+npm run build
 
 # 5. Preview the production build locally
 npm run preview
@@ -91,16 +55,104 @@ npm run preview
 
 ### Deployment
 
-`npm run build` emits a static `./dist` folder, so the app deploys anywhere.
-The demo is deployed on **Vercel**:
+`npm run build` emits a fully static `./dist` folder. The demo is deployed on
+**Vercel** (Add New → Project → import the repo; Vite is auto-detected with
+build command `npm run build` and output directory `dist`), but any static
+host works identically — no server runtime is required. The page uses only
+in-page anchors, so no SPA rewrite rule is needed.
 
-1. Push this repository to GitHub (public).
-2. In Vercel: **Add New → Project**, import the repo — Vite is auto-detected
-   (build command `npm run build`, output directory `dist`).
-3. Deploy and submit the generated URL.
+### Continuous integration
 
-Any other static host (Netlify, Cloudflare Pages, or a self-managed nginx)
-works identically; no server runtime is required.
+`.github/workflows/ci.yml` runs the test suite, type-checking, and the
+production build on every push and pull request.
+
+---
+
+## Technologies and libraries used
+
+| Technology                    | Role       | Why it was chosen                                                              |
+| ----------------------------- | ---------- | ------------------------------------------------------------------------------ |
+| **Vite 7**                    | Build tool | Matches the original site's stack; fast dev server, small static output.       |
+| **React 19 + TypeScript**     | UI         | Component architecture with strict type safety across data and props.          |
+| **Tailwind CSS 3**            | Styling    | Design tokens sampled from the live site live in one config (`tailwind.config.ts`). |
+| **Framer Motion 12**          | Animation  | Declarative entrance/stagger animation; respects reduced motion out of the box. |
+| **Vitest 4**                  | Testing    | Unit tests for board coordinate math and bundled-data integrity.               |
+| **GitHub Actions**            | CI         | Tests + type-check + build on every push.                                      |
+| **python-chess** (build-time) | Data       | Game and puzzle positions are generated and engine-verified from real PGN — nothing hand-typed, and no chess engine ships in the bundle. |
+
+---
+
+## Design decisions
+
+- **Option 2, not a redesign.** The site is the company's own product with an
+  established brand. Recreating it faithfully and improving it respectfully
+  demonstrates more judgement than discarding a working identity.
+- **Design tokens sampled from the source.** Colors (`#050B1D`, `#6366f1`,
+  `#8b5cf6`, `#c084fc`), the Inter typeface, and the gradient headline are taken
+  from the live site's CSS so the recreation is accurate rather than approximate.
+- **The board is the centrepiece.** The most memorable part of the original hero
+  is the live game, so it received the most engineering care: engine-verified
+  move data, gliding piece animation, playback controls, a game switcher, and a
+  reduced-motion fallback (final position, no autoplay).
+- **Retention thinking.** A hero's underlying job is acquisition and engagement.
+  The puzzle tab turns a passive visitor into a player within seconds; the
+  replay controls invite a first interaction; the primary CTA is singular.
+- **Precomputed positions, no engine in the bundle.** The games are converted to
+  8×8 position frames at build time, so the client just renders frames —
+  deterministic animation and a smaller bundle.
+- **State isolation via `key`.** Each game's replay is remounted with a React
+  `key`, making stale-index bugs across games structurally impossible (a
+  defensive clamp backs this up — that exact bug shipped once during
+  development and is documented in the code).
+- **Static tilt, deliberately.** Two tilt iterations were rejected — a
+  pointer-tracking tilt and a flatten-on-hover — because any transform that
+  reacts to the pointer moves click targets while the user is aiming at them,
+  and `transform-style: preserve-3d` was found to corrupt browser hit-testing.
+  The final card tilts statically and flattens only on keyboard focus. The
+  reasoning is preserved in comments in `TiltCard.tsx` and `index.css`.
+
+## Assumptions made
+
+- The Evergreen Game matches the game shown on the live site; the Opera Game
+  was added as a second classic. Any PGN can be converted into the same JSON
+  shape and dropped into `src/data/`.
+- Copy and stat figures (10M+ games, 180+ countries) are representative
+  placeholder marketing numbers, not audited metrics.
+- Only the hero is in scope, so nav links and CTAs point to in-page anchors
+  rather than real routes.
+- The puzzle is a curated one-move challenge, not a full chess engine — it
+  accepts exactly the winning move by design.
+
+## Trade-offs considered
+
+- **No analytics.** Measurement (e.g. GA4 on CTA clicks and board interactions)
+  belongs on the real production page, but was deliberately left out of this
+  component demo to keep it dependency-free and privacy-clean. The natural hook
+  points are the CTA `onClick`s and the board control handlers.
+- **Framer Motion adds ~30 KB gzipped** but replaces substantial hand-written
+  animation code and provides reduced-motion handling for free — worthwhile for
+  a marketing page; the piece-flight animation is pure CSS where determinism
+  mattered more.
+- **Static output (no SSR)** fits a fully static hero. If the page later needs
+  per-request data or dynamic OG images, it can move to an SSR-capable setup.
+- **Single winning move in the puzzle** rather than full legal-move validation —
+  a scope cut that keeps the bundle free of a chess engine while still
+  delivering real interaction; the data-accessor pattern makes swapping in
+  chess.js straightforward later.
+- **Unicode glyph pieces** instead of SVG piece sets — zero asset weight and
+  crisp at every size, at the cost of minor cross-platform font differences.
+
+## What I would improve if given additional time
+
+- **Full drag-and-drop play** with legal-move validation (chess.js) and a
+  rotating daily puzzle — the strongest retention mechanic on this surface.
+- **Playwright end-to-end tests in CI** (tab switching, puzzle solving,
+  game switching mid-replay) on top of the existing unit suite — several bugs
+  found during development were state-transition bugs that only E2E catches.
+- **Analytics** wired to the existing hook points once a measurement plan exists.
+- **A generated Open Graph image** per deployment and richer social cards.
+- **Internationalisation** and a reduced-data mode.
+- **Real routes** for the CTAs once the surrounding application exists.
 
 ---
 
@@ -111,81 +163,24 @@ src/
   components/
     Header.tsx         # sticky nav + brand mark
     Hero.tsx           # headline, copy, CTAs, stats (staged entrance)
-    BoardPanel.tsx     # tabbed card: replay / puzzle
-    TiltCard.tsx       # resting 3D tilt that flattens on hover/focus
+    BoardPanel.tsx     # tabbed card: replay / puzzle, owns game selection
+    BoardGrid.tsx      # shared presentational 8x8 board (optionally interactive)
+    ReplayBoard.tsx    # classic-game replay + playback controls
+    PuzzleBoard.tsx    # mate-in-one interaction (select piece -> destination)
+    TiltCard.tsx       # resting 3D tilt (static under pointer, by design)
     FloatingPieces.tsx # decorative drifting background pieces
     CountUpStat.tsx    # stat that counts up when scrolled into view
-    BoardGrid.tsx      # shared presentational 8x8 board (optionally interactive)
-    ReplayBoard.tsx    # Evergreen Game replay + playback controls
-    PuzzleBoard.tsx    # mate-in-one interaction (select piece -> destination)
     LoadingScreen.tsx  # branded first-paint splash
-    ErrorBoundary.tsx  # branded crash fallback with reload
+    ErrorBoundary.tsx  # branded crash fallback that surfaces the error message
   data/
     games.ts           # both classics, shared fail-fast validation
     evergreen.json     # Evergreen Game positions (from real PGN)
     opera.json         # Opera Game positions (from real PGN)
-    evergreen.ts       # re-export kept for import stability
     puzzle.json        # engine-verified mate-in-one position
     puzzle.ts          # typed accessor with fail-fast validation
-  App.tsx
-  main.tsx
-  index.css            # Tailwind layers, gradient bg, a11y utilities
+  __tests__/
+    board.test.ts      # coordinate math + data-integrity tests (10 tests)
+  App.tsx              # skip link, layout shell
+  main.tsx             # entry, error boundary wiring
+  index.css            # Tailwind layers, gradient bg, motion keyframes, a11y utilities
 ```
-
-The board never runs a chess engine in the browser: the 47-ply game is converted
-to a list of 8×8 positions at build time, so the client just renders frames. This
-keeps the bundle small and the animation deterministic.
-
----
-
-## Design decisions
-
-- **Option 2, not 3.** The site is the company's own product with an established
-  brand. Recreating it faithfully and improving it respectfully demonstrates more
-  judgement than discarding a working identity for a redesign.
-- **Tokens sampled from the source.** Colors (`#050B1D`, `#6366f1`, `#8b5cf6`,
-  `#c084fc`), Inter, and the gradient headline are taken from the live CSS so the
-  recreation is accurate rather than approximate.
-- **The board is the centrepiece.** The most memorable part of the original hero
-  is the live game, so it received the most engineering care: accuracy, move
-  highlighting, playback controls, reduced-motion fallback, hidden-tab pause.
-- **Retention thinking.** A hero's underlying job is acquisition and engagement.
-  The replay controls invite a first interaction, the primary CTA is singular and
-  unambiguous, and the stats row provides social proof.
-- **Motion with restraint.** Entrance animations are subtle and fully disabled for
-  users who prefer reduced motion.
-
-## Assumptions
-
-- The Evergreen Game matches the game shown on the live site; any PGN can be
-  swapped into `evergreen.json` via the generation script approach.
-- Copy and stat figures (10M+ games, etc.) are representative placeholders for a
-  marketing hero, not audited numbers.
-- Nav links point to in-page anchors since only the hero was in scope.
-
-## Trade-offs
-
-- **No analytics.** Measurement (e.g. GA4 on CTA clicks and board interactions)
-  belongs on the real production page, but was deliberately left out of this
-  component demo to keep it dependency-free and privacy-clean. The obvious hook
-  points are the CTA `onClick`s and the board control handlers.
-- **Framer Motion** adds a few KB but replaces a lot of hand-written animation
-  code and gives reduced-motion handling for free — worthwhile for a marketing page.
-- **Static output** (no SSR) fits a fully static hero; if the page later needs
-  per-request data or dynamic OG images, it can move to an SSR-capable setup.
-- The puzzle accepts **only the single winning move** rather than running full
-  legal-move validation — a deliberate scope cut that keeps the bundle free of a
-  chess engine while still delivering real interaction. The data accessor pattern
-  makes swapping in a full engine (e.g. chess.js) straightforward later.
-
-## What I'd improve with more time
-
-- Full **drag-and-drop play** with legal-move validation (chess.js) and a
-  rotating daily puzzle.
-- **Playwright** visual/accessibility smoke tests in CI, on top of the existing
-  Vitest unit suite.
-- **Analytics** wired to the CTA and board-control hook points, once a real
-  measurement plan exists for the page.
-- A generated **OG image** for richer social sharing.
-- Real **i18n** and a reduced-data mode.
-- Wire CTAs to real routes once the surrounding app exists.
