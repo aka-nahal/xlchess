@@ -6,6 +6,13 @@ import TiltCard from "./TiltCard";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/**
+ * The loading screen holds for ~0.9s and fades over 0.5s. Entrance animations
+ * start at 1.0s so they overlap the fade and play in view, instead of running
+ * hidden behind the splash. (Reduced-motion users skip both.)
+ */
+const ENTRANCE_DELAY = 1.0;
+
 /** Headline words; the last two carry the gradient. */
 const HEADLINE: { text: string; gradient?: boolean }[] = [
   { text: "Build" },
@@ -24,7 +31,7 @@ export default function Hero() {
     show: {
       transition: {
         staggerChildren: prefersReduced ? 0 : 0.1,
-        delayChildren: 0.15,
+        delayChildren: prefersReduced ? 0 : ENTRANCE_DELAY,
       },
     },
   };
@@ -35,14 +42,11 @@ export default function Hero() {
   };
 
   // Word-by-word reveal for the headline.
+  // NOTE: no transition inside the variant — a variant-level transition
+  // overrides the per-word `transition` prop (which carries the stagger delay).
   const word: Variants = {
     hidden: prefersReduced ? {} : { opacity: 0, y: "0.6em", rotate: 2 },
-    show: {
-      opacity: 1,
-      y: 0,
-      rotate: 0,
-      transition: { duration: 0.55, ease: EASE },
-    },
+    show: { opacity: 1, y: 0, rotate: 0 },
   };
 
   return (
@@ -97,7 +101,7 @@ export default function Hero() {
                   variants={word}
                   initial="hidden"
                   animate="show"
-                  transition={{ delay: 0.25 + i * 0.09, duration: 0.55, ease: EASE }}
+                  transition={{ delay: (prefersReduced ? 0 : ENTRANCE_DELAY + 0.1) + i * 0.09, duration: 0.55, ease: EASE }}
                 >
                   {w.text}
                 </motion.span>
@@ -110,8 +114,8 @@ export default function Hero() {
             variants={item}
             className="mt-6 max-w-md text-base leading-relaxed text-slate-300 sm:text-lg"
           >
-            A complete chess platform to play, learn, compete, and grow&mdash;built
-            to become the world&rsquo;s{" "}
+            A complete chess platform to play, learn, compete, and grow. Built to
+            become the world&rsquo;s{" "}
             <span className="font-semibold text-slate-100">#1 destination</span>{" "}
             for chess.
           </motion.p>
@@ -155,7 +159,7 @@ export default function Hero() {
           className="flex w-full max-w-[440px] shrink-0 justify-center lg:justify-end"
           initial={prefersReduced ? {} : { opacity: 0, scale: 0.94, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.45, ease: EASE }}
+          transition={{ duration: 0.9, delay: prefersReduced ? 0 : ENTRANCE_DELAY + 0.35, ease: EASE }}
         >
           <TiltCard>
             <BoardPanel />

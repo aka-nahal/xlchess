@@ -79,7 +79,7 @@ export default function PuzzleBoard() {
   const statusText = solved
     ? explanation
     : phase === "moving"
-      ? `Piece on ${selected} selected \u2014 now pick its destination.`
+      ? `Piece on ${selected} selected. Now pick its destination.`
       : prompt;
 
   return (

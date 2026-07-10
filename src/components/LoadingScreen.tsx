@@ -24,7 +24,7 @@ export default function LoadingScreen() {
         <motion.div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{ opacity: 0, scale: 1.04 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
           aria-hidden
         >

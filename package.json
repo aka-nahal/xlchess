@@ -6,11 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "npm run build && wrangler dev",
+    "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "deploy": "npm run build && wrangler deploy"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",
@@ -18,7 +17,6 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.44.0",
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
@@ -28,7 +26,6 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.6.3",
     "vite": "^7.1.0",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.110.0"
+    "vitest": "^4.1.10"
   }
 }
